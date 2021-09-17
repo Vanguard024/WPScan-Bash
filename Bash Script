@@ -1,0 +1,20 @@
+#Author: Tom Carrigan
+#Co-Author: Regan van Eijk
+#Date: 10 September 2021
+#Version 1
+
+#!/bin/bash
+args=("$@")
+# wpscan using api token and output to file in json format. 
+# Command line requires 3 arguments - target url; api token ; name of file to ouput to
+sudo wpscan --ignore-main-redirect --rua --url ${args[0]} -e vp --api-token ${args[1]} --output ${args[2]} --format json
+# wpscan set to enumerate vulnerable plugins
+jq -r '.target_url, .target_ip' ${args[2]} | tee >> apireport${args[2]}
+# extract target_url and target_ip and add to output file
+echo "Enumerated Plugins and their Vulnerabilities" | tee >> apireport${args[2]}
+jq '.plugins[] | [.slug,.vulnerabilities]' ${args[2]} | tee >> apireport${args[2]}
+# extract vulnerable plugins and add to output file
+sed -i '/wpvulndb.*/,+2d' apireport${args[2]}
+sed -i '/references.*/d' apireport${args[2]}
+# remove unwanted information from output file
+# end script
